@@ -1,0 +1,79 @@
+AWSTemplateFormatVersion: 2010-09-09
+Description: nightly-stats
+# Transform section specifies one or more macros that AWS CloudFormation uses to process your template
+# https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/transform-section-structure.html
+Transform:
+- AWS::Serverless-2016-10-31
+Parameters:
+  Vpc:
+    Type: AWS::EC2::VPC::Id
+    # ARN: ???
+    Default: vpc-9c9714f9
+    Description: VPC to connect to
+  Subnet:
+    Type: List<AWS::EC2::Subnet::Id>
+    # ARN: arn:aws:ec2:us-east-1:612297603577:subnet/subnet-7fb16326
+    Default: subnet-7fb16326
+    Description: Subnet to use
+  SecurityGroup:
+    Type: AWS::EC2::SecurityGroup::Id
+    Default: sg-0609ae4c2e469864f
+    Description: Security group to use
+  MetricsDbHost:
+    Type: String
+    Description: The hostname of the database
+  MetricsDbUserName:
+    Type: String
+    Default: master
+  MetricsDbPassword:
+    Type: String
+    Description: The password of the database.
+  MetricsDbName:
+    Type: String
+    Description: SQL database name
+  PortalDbHost:
+    Type: String
+    Description: The hostname of the database
+  PortalDbUserName:
+    Type: String
+    Default: master
+  PortalDbPassword:
+    Type: String
+    Description: The password of the database.
+  PortalDbName:
+    Type: String
+    Description: SQL database name
+Resources:
+  # no changes to parameters, just here in case we need to add any
+  nightlyStatsFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      Handler: src/handlers/collect-metrics.collectMetrics
+      Runtime: nodejs18.x # Node.js LTS
+      Architectures:
+        - x86_64
+      MemorySize: 128
+      Timeout: 100
+      Description: A Lambda function that calculates and stores nightly statistics about the Learn Portal
+      Policies:
+        - AWSLambdaBasicExecutionRole
+      VpcConfig:
+        SecurityGroupIds:
+          - !Ref SecurityGroup
+        SubnetIds: !Ref "Subnet"
+      Environment:
+        Variables:
+          PORTAL_DATABASE_NAME: !Ref "PortalDbName"
+          PORTAL_DATABASE_USERNAME: !Ref "PortalDbUserName"
+          PORTAL_DATABASE_PASSWORD: !Ref "PortalDbPassword"
+          PORTAL_DATABASE_HOST: !Ref "PortalDbHost"
+          METRICS_DATABASE_NAME: !Ref "MetricsDbName"
+          METRICS_DATABASE_USERNAME: !Ref "MetricsDbUserName"
+          METRICS_DATABASE_PASSWORD: !Ref "MetricsDbPassword"
+          METRICS_DATABASE_HOST: !Ref "MetricsDbHost"
+      # Events:
+      #   InvocationLevel:
+      #     Type: ScheduleV2
+      #     Properties:
+      #       ScheduleExpression: cron(30 20 * * *) # Run every night at 8:30 PM EST
+      #       ScheduleExpressionTimezone: America/New_York
