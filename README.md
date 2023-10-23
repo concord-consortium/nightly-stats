@@ -3,6 +3,10 @@
 ## Creating metrics database
 
 ```sql
+-- Create database
+CREATE DATABASE metrics WITH OWNER = metrics;
+
+-- Create metrics table
 CREATE TABLE IF NOT EXISTS
   basic_metrics
 (
